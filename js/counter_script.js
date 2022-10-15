@@ -1,5 +1,5 @@
-var counter = document.getElementById('count').innerHTML;
-var maxCount = 10;
+let counter = document.getElementById('count').innerHTML;
+let maxCount = 10;
 
 // Проверка на правильное отображение кнопок после загрузки страницы (начало)
 if(counter == "") {
