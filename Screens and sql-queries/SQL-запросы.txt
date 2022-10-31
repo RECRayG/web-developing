@@ -1,0 +1,124 @@
+/*Запрос на список категорий с количеством товара*/
+select * from (
+select c.id_category, c.category_name, c.description, count(*) as count_products
+from categories c
+inner join c_pr_identity cpri on cpri.id_category = c.id_category
+inner join products p on p.id_product = cpri.id_product
+group by c.id_category
+UNION ALL
+select c.id_category, c.category_name, c.description, count(*) as count_products
+from categories c
+inner join main_product_category mprc on mprc.id_category = c.id_category
+inner join products p on p.id_product = mprc.id_product
+group by c.id_category) cats
+order by count_products desc, category_name;
+
+
+/*Запрос, который выводит все категории, даже с
+количеством товаров 0, но с указанием количества товара для каждой
+категории, как и в оригинальном задании*/
+select distinct id_category, category_name, description, sum(count_products) as count_products from (
+        select c.id_category, c.category_name, c.description, count(cpri.id_category) as count_products
+        from categories c
+        left join c_pr_identity cpri on cpri.id_category = c.id_category
+        left join products p on p.id_product = cpri.id_product
+        group by c.id_category
+        UNION all
+        select c.id_category, c.category_name, c.description, count(mprc.id_category) as count_products
+        from categories c
+        left join main_product_category mprc on mprc.id_category = c.id_category
+        left join products p on p.id_product = mprc.id_product
+        group by c.id_category) cats
+group by id_category, category_name, description
+order by count_products desc, category_name;
+
+/*Запрос, который выводит все категории товаров с
+указанием количества товаров, имеющих количество товаров больше
+либо равно 2*/
+select * from (
+select c.id_category, c.category_name, c.description, count(*) as count_products
+from categories c
+inner join c_pr_identity cpri on cpri.id_category = c.id_category
+inner join products p on p.id_product = cpri.id_product
+group by c.id_category
+UNION ALL
+select c.id_category, c.category_name, c.description, count(*) as count_products
+from categories c
+inner join main_product_category mprc on mprc.id_category = c.id_category
+inner join products p on p.id_product = mprc.id_product
+group by c.id_category) cats
+having count_products >= 2
+order by count_products desc, category_name;
+
+
+
+/*Получить все товары из конкретной категории каталога*/
+select id_product, name, is_active, picture_src, picture_alt, category_name 
+from (
+    select pr.id_product, pr.name, pr.is_active, pic.picture_src, pic.picture_alt, cat.id_category, cat.category_name
+    from products pr
+    inner join c_pr_identity cpri on cpri.id_product = pr.id_product
+    inner join categories cat on cat.id_category = cpri.id_category
+    inner join pr_pi_identity prpi on prpi.id_product = pr.id_product
+    inner join pictures pic on pic.id_picture = prpi.id_picture
+    union all
+    select pr.id_product, pr.name, pr.is_active, pic.picture_src, pic.picture_alt, cat.id_category, cat.category_name
+    from products pr
+    inner join main_product_category mpc on mpc.id_product = pr.id_product
+    inner join categories cat on cat.id_category = mpc.id_category
+    inner join preview_picture_product ppp on ppp.id_product = pr.id_product
+    inner join pictures pic on pic.id_picture = ppp.id_picture) products
+where id_category = 5
+order by id_product;
+
+
+/*Получить срез из 12 товаров в конкретной категории каталога*/
+select id_product, name, is_active, picture_src, picture_alt, category_name 
+from (
+    select pr.id_product, pr.name, pr.is_active, pic.picture_src, pic.picture_alt, cat.id_category, cat.category_name
+    from products pr
+    inner join c_pr_identity cpri on cpri.id_product = pr.id_product
+    inner join categories cat on cat.id_category = cpri.id_category
+    inner join pr_pi_identity prpi on prpi.id_product = pr.id_product
+    inner join pictures pic on pic.id_picture = prpi.id_picture
+    union all
+    select pr.id_product, pr.name, pr.is_active, pic.picture_src, pic.picture_alt, cat.id_category, cat.category_name
+    from products pr
+    inner join main_product_category mpc on mpc.id_product = pr.id_product
+    inner join categories cat on cat.id_category = mpc.id_category
+    inner join preview_picture_product ppp on ppp.id_product = pr.id_product
+    inner join pictures pic on pic.id_picture = ppp.id_picture) products
+where id_category = 5
+order by id_product
+limit 0, 12;
+/*вместо 0 в php будет подставляться число, в зависимости от того, 
+на какой странице сейчас пользователь, например: 1стр.-0, 2стр.-12, 3стр.-24 и т.д.*/
+
+
+/*Вся информация о товаре*/
+/*Товар + главная картинка + главная категория*/
+select pr.id_product, pr.name, pr.is_active, pic.picture_src as main_picture, pic.picture_alt, cat.category_name as main_category
+from products pr
+inner join main_product_category mpc on mpc.id_product = pr.id_product
+inner join categories cat on cat.id_category = mpc.id_category
+inner join preview_picture_product ppp on ppp.id_product = pr.id_product
+inner join pictures pic on pic.id_picture = ppp.id_picture
+where cat.id_category = 5;
+
+
+
+/*Дополнительные категории товара*/
+select pr.id_product, pr.name, pr.is_active, cat.category_name as dlc_category
+from products pr
+inner join c_pr_identity cpri on cpri.id_product = pr.id_product
+inner join categories cat on cat.id_category = cpri.id_category
+where cat.id_category = 12;
+
+
+
+/*Дополнительные картинки товара*/
+select pr.id_product, pr.name, pr.is_active, pic.picture_src as dlc_picture, pic.picture_alt
+from products pr
+inner join pr_pi_identity prpi on prpi.id_product = pr.id_product
+inner join pictures pic on pic.id_picture = prpi.id_picture
+where pr.id_product = 11;
